@@ -13,12 +13,19 @@ export function DashboardHeader({ dict, fullName }: { dict: Dictionary; fullName
     { href: '/', title: dict.overview.title, subtitle: dict.overview.subtitle },
     { href: '/users', title: dict.users.title, subtitle: dict.users.subtitle },
     { href: '/packs', title: dict.packs.title, subtitle: dict.packs.subtitle },
+    { href: '/packages', title: dict.packages.title, subtitle: dict.packages.subtitle },
+    {
+      href: '/customer-packages',
+      title: dict.customerPackages.title,
+      subtitle: dict.customerPackages.subtitle,
+    },
     {
       href: '/payment-methods',
       title: dict.paymentMethods.title,
       subtitle: dict.paymentMethods.subtitle,
     },
     { href: '/car-catalog', title: dict.carCatalog.title, subtitle: dict.carCatalog.subtitle },
+    { href: '/settings', title: dict.settings.title, subtitle: dict.settings.subtitle },
   ];
 
   const page =

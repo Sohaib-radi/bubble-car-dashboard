@@ -28,6 +28,7 @@ import { useDictionary } from '@/components/i18n-provider';
 import { EditUserDialog } from './edit-user-dialog';
 import { UserDetailsDialog } from './user-details-dialog';
 import { BulkMessageDialog } from './bulk-message-dialog';
+import { AddUserDialog } from './add-user-dialog';
 import type { Profile, Role } from './types';
 
 const ROLE_VARIANT: Record<Role, 'secondary' | 'default' | 'destructive'> = {
@@ -145,37 +146,40 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <Input
-          placeholder={dict.users.searchPlaceholder}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
-        />
-        <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as Role | 'all')}>
-          <SelectTrigger className="w-40">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{dict.users.allRoles}</SelectItem>
-            <SelectItem value="customer">{dict.common.roles.customer}</SelectItem>
-            <SelectItem value="staff">{dict.common.roles.staff}</SelectItem>
-            <SelectItem value="manager">{dict.common.roles.manager}</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select
-          value={verifiedFilter}
-          onValueChange={(v) => setVerifiedFilter(v as 'all' | 'verified' | 'unverified')}
-        >
-          <SelectTrigger className="w-44">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{dict.users.allVerified}</SelectItem>
-            <SelectItem value="verified">{dict.users.verifiedOnly}</SelectItem>
-            <SelectItem value="unverified">{dict.users.unverifiedOnly}</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <Input
+            placeholder={dict.users.searchPlaceholder}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-sm"
+          />
+          <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as Role | 'all')}>
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{dict.users.allRoles}</SelectItem>
+              <SelectItem value="customer">{dict.common.roles.customer}</SelectItem>
+              <SelectItem value="staff">{dict.common.roles.staff}</SelectItem>
+              <SelectItem value="manager">{dict.common.roles.manager}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select
+            value={verifiedFilter}
+            onValueChange={(v) => setVerifiedFilter(v as 'all' | 'verified' | 'unverified')}
+          >
+            <SelectTrigger className="w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{dict.users.allVerified}</SelectItem>
+              <SelectItem value="verified">{dict.users.verifiedOnly}</SelectItem>
+              <SelectItem value="unverified">{dict.users.unverifiedOnly}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <AddUserDialog onCreated={(newProfile) => setProfiles((prev) => [newProfile, ...prev])} />
       </div>
 
       {selectedIds.size > 0 && (

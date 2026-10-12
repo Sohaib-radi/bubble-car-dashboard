@@ -4,7 +4,7 @@ import { DashboardHeader } from '@/components/dashboard-header';
 import { BrandMark } from '@/components/brand-mark';
 import { getDictionary } from '@/i18n';
 import { getLocale } from '@/i18n/get-locale';
-import { LayoutDashboard, Users, Package, Wallet, Car } from 'lucide-react';
+import { LayoutDashboard, Users, Package, Wallet, Car, CalendarRange, Ticket, Settings } from 'lucide-react';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
@@ -28,12 +28,19 @@ export default async function DashboardLayout({ children }: { children: React.Re
     { href: '/', label: dict.nav.overview, icon: <LayoutDashboard className="size-4" /> },
     { href: '/users', label: dict.nav.users, icon: <Users className="size-4" /> },
     { href: '/packs', label: dict.nav.packsPricing, icon: <Package className="size-4" /> },
+    { href: '/packages', label: dict.nav.packages, icon: <CalendarRange className="size-4" /> },
+    {
+      href: '/customer-packages',
+      label: dict.nav.customerPackages,
+      icon: <Ticket className="size-4" />,
+    },
     {
       href: '/payment-methods',
       label: dict.nav.paymentMethods,
       icon: <Wallet className="size-4" />,
     },
     { href: '/car-catalog', label: dict.nav.carCatalog, icon: <Car className="size-4" /> },
+    { href: '/settings', label: dict.nav.settings, icon: <Settings className="size-4" /> },
   ];
 
   return (
