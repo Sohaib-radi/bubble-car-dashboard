@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Pencil } from 'lucide-react';
+import { Pencil, Receipt } from 'lucide-react';
 import { useDictionary } from '@/components/i18n-provider';
 import { ManageBookingDialog, type BookingItem } from '@/components/manage-booking-dialog';
 import { isPeriodKey } from '@/lib/booking-settings';
@@ -49,9 +49,8 @@ export default function OverviewPage() {
       supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'customer'),
       supabase
         .from('bookings')
-        .select(
-          'id, pack_name_en, car_type, price, status, booking_date, booking_time, created_at, user_id, user_package_id, profiles(full_name, phone)'
-        )
+        // `*` so the page keeps working before payment_proof_path is migrated.
+        .select('*, profiles(full_name, phone)')
         .order('created_at', { ascending: false })
         .limit(200),
     ]);
@@ -188,7 +187,17 @@ export default function OverviewPage() {
                     </TableCell>
                     <TableCell className="capitalize">{b.car_type ?? '—'}</TableCell>
                     <TableCell>
-                      {b.price ? `${Number(b.price).toLocaleString()} ${dict.common.egp}` : '—'}
+                      <span className="inline-flex items-center gap-1.5">
+                        {b.price ? `${Number(b.price).toLocaleString()} ${dict.common.egp}` : '—'}
+                        {!b.user_package_id && (b.payment_proof_path || b.payment_reference) && (
+                          <Receipt
+                            className="size-3.5 text-muted-foreground"
+                            aria-label={dict.overview.hasPaymentProof}
+                          >
+                            <title>{dict.overview.hasPaymentProof}</title>
+                          </Receipt>
+                        )}
+                      </span>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {b.booking_date ?? new Date(b.created_at).toLocaleDateString()}

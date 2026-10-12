@@ -136,6 +136,7 @@ Implemented from [MOBILE_UX_PLAN.md](MOBILE_UX_PLAN.md): 5-tab nav (Home · Book
 | 2026-10-08 | Mobile UX redesign proposal written: [MOBILE_UX_PLAN.md](MOBILE_UX_PLAN.md) |
 | 2026-10-10 | Blocked periods support **date ranges** and **time ranges**; app shows closed hours |
 | 2026-10-09 | Dashboard **Settings** page (booking rules, blocked periods, service icons), daily capacity + today's load on Overview; mobile **UX redesign** implemented |
+| 2026-10-12 | **Payment proof**: customer app sends a transaction number and/or receipt screenshot (bucket `payment-proofs`, path `<user id>/<file>`); Overview → manage reservation shows method, copyable number and the receipt image; receipt icon in the bookings table |
 
 ---
 
@@ -147,7 +148,8 @@ Implemented from [MOBILE_UX_PLAN.md](MOBILE_UX_PLAN.md): 5-tab nav (Home · Book
 - [x] Ran `20261010_block_ranges.sql` (verified 2026-10-10).
 - [x] Mobile History / Booking details show "paid by package".
 - [ ] Schedule `expire_stale_user_packages()` with pg_cron (today it runs when the dashboard page opens; the app and DB checks already treat expired rows correctly).
-- [ ] Payment proof image upload (`bookings.payment_proof_path`) is not implemented; only the transaction reference is used.
+- [ ] Run `20261012_payment_proofs.sql` (adds `bookings.payment_proof_path` + private `payment-proofs` storage bucket and policies).
+- [ ] Package purchases (`user_packages`) still only take a transaction reference, no receipt image.
 - [ ] Bring `bubble-car/supabase/schema.sql` up to date with the live schema (or dump it into a baseline migration).
 - [ ] VIP points card on mobile Home is still placeholder data.
 - [ ] Lint: `src/app/(dashboard)/page.tsx` `loadData()` in `useEffect` trips `react-hooks/set-state-in-effect`.

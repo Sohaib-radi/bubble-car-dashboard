@@ -20,9 +20,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { CheckCircle2, Clock, Play, XCircle } from 'lucide-react';
+import { CheckCircle2, Clock, Copy, ExternalLink, Play, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { useDictionary } from '@/components/i18n-provider';
+import { useDictionary, useLocale } from '@/components/i18n-provider';
+
+// Private bucket written by the customer app (see 20261012_payment_proofs.sql).
+const PAYMENT_PROOF_BUCKET = 'payment-proofs';
 
 // Statuses that take a place in the day (see booking_status_takes_capacity in SQL).
 const CAPACITY_STATUSES = ['confirmed', 'arrived', 'in_progress', 'completed'];
@@ -38,6 +41,10 @@ export type BookingItem = {
   created_at: string;
   user_id?: string | null;
   user_package_id?: string | null;
+  payment_method_label_en?: string | null;
+  payment_method_label_ar?: string | null;
+  payment_reference?: string | null;
+  payment_proof_path?: string | null;
   profiles?: { full_name: string; phone: string | null } | null;
 };
 
@@ -83,12 +90,15 @@ export function ManageBookingDialog({
   onSaved: (updatedBooking: BookingItem) => void;
 }) {
   const dict = useDictionary();
+  const locale = useLocale();
   const [status, setStatus] = useState<string>(booking?.status ?? 'pending_review');
   const [price, setPrice] = useState<string>(
     booking?.price !== null && booking?.price !== undefined ? String(booking.price) : ''
   );
   const [bookingDate, setBookingDate] = useState<string>(booking?.booking_date ?? '');
   const [saving, setSaving] = useState(false);
+  // Keyed by path so a result for a previous booking is never shown.
+  const [receipt, setReceipt] = useState<{ path: string; url: string | null } | null>(null);
 
   useEffect(() => {
     if (booking) {
@@ -97,6 +107,24 @@ export function ManageBookingDialog({
       setBookingDate(booking.booking_date ?? '');
     }
   }, [booking]);
+
+  const proofPath = booking?.payment_proof_path ?? null;
+  useEffect(() => {
+    if (!proofPath) return;
+    let cancelled = false;
+    supabase.storage
+      .from(PAYMENT_PROOF_BUCKET)
+      .createSignedUrl(proofPath, 60 * 60)
+      .then(({ data, error }) => {
+        if (!cancelled) setReceipt({ path: proofPath, url: error || !data ? null : data.signedUrl });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [proofPath, supabase]);
+  const receiptLoaded = !!proofPath && receipt?.path === proofPath;
+  const receiptUrl = receiptLoaded ? receipt.url : null;
+  const receiptError = receiptLoaded && !receipt.url;
 
   if (!booking) return null;
 
@@ -164,10 +192,20 @@ export function ManageBookingDialog({
 
   const customerName = booking.profiles?.full_name || booking.user_id || '—';
   const customerPhone = booking.profiles?.phone;
+  const paymentLabel = locale === 'ar'
+    ? booking.payment_method_label_ar || booking.payment_method_label_en
+    : booking.payment_method_label_en || booking.payment_method_label_ar;
+  const reference = booking.payment_reference?.trim();
+
+  async function copyReference() {
+    if (!reference) return;
+    await navigator.clipboard.writeText(reference);
+    toast.success(dict.overview.copied);
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between gap-2 pr-6">
             <DialogTitle>{dict.overview.manageBookingTitle}</DialogTitle>
@@ -203,6 +241,76 @@ export function ManageBookingDialog({
                 </span>
               </div>
             </div>
+          </div>
+
+          {/* Payment proof */}
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">{dict.overview.payment}</Label>
+            {booking.user_package_id ? (
+              <p className="text-sm text-muted-foreground">{dict.overview.paidByPackage}</p>
+            ) : (
+              <div className="rounded-xl border p-3.5 space-y-3 text-sm">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <span className="text-xs text-muted-foreground block">{dict.overview.paymentMethod}</span>
+                    <span className="font-medium">{paymentLabel || '—'}</span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground block">{dict.overview.paymentReference}</span>
+                    {reference ? (
+                      <button
+                        type="button"
+                        onClick={copyReference}
+                        className="inline-flex items-center gap-1.5 font-mono font-medium hover:underline"
+                        dir="ltr"
+                      >
+                        {reference}
+                        <Copy className="size-3.5 text-muted-foreground" />
+                      </button>
+                    ) : (
+                      <span className="font-medium">—</span>
+                    )}
+                  </div>
+                </div>
+
+                {proofPath && (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">{dict.overview.paymentReceipt}</span>
+                      {receiptUrl && (
+                        <a
+                          href={receiptUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-xs hover:underline"
+                        >
+                          {dict.overview.openReceipt}
+                          <ExternalLink className="size-3" />
+                        </a>
+                      )}
+                    </div>
+                    {receiptError ? (
+                      <p className="text-xs text-destructive">{dict.overview.receiptLoadFailed}</p>
+                    ) : receiptUrl ? (
+                      <a href={receiptUrl} target="_blank" rel="noreferrer" className="block">
+                        {/* eslint-disable-next-line @next/next/no-img-element -- short-lived signed URL */}
+                        <img
+                          src={receiptUrl}
+                          alt={dict.overview.paymentReceipt}
+                          className="max-h-72 w-full rounded-lg border bg-muted/30 object-contain"
+                        />
+                      </a>
+                    ) : (
+                      <div className="h-40 w-full animate-pulse rounded-lg bg-muted" />
+                    )}
+                  </div>
+                )}
+
+                {!reference && !proofPath && (
+                  <p className="text-xs text-muted-foreground">{dict.overview.noPaymentProof}</p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Quick Actions */}
